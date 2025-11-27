@@ -2,31 +2,21 @@ using System;
 using System.IO;
 using UnityEngine;
 
-
 public class TelemetryLogger : MonoBehaviour
 {
     public static TelemetryLogger Instance { get; private set; }
+    string csvPath;
 
-    private string csvPath;
-
-    private void Awake()
+    void Awake()
     {
-        if (Instance == null)
-            Instance = this;
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
-
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
         DontDestroyOnLoad(gameObject);
 
         csvPath = Path.Combine(Application.persistentDataPath, "ollama_telemetry.csv");
-
         if (!File.Exists(csvPath))
         {
-            File.WriteAllText(csvPath,
-                "timestampUtc,model,inferenceMs,tokens,tokensGenerated,platform,device,deviceType\n");
+            File.WriteAllText(csvPath, "timestampUtc,model,inferenceMs,tokens,tokensGenerated,platform,device,deviceType\n");
         }
     }
 
@@ -34,11 +24,9 @@ public class TelemetryLogger : MonoBehaviour
     {
         try
         {
-            string line = $"{t.timestampUtc},{Escape(t.model)},{t.inferenceMs:F0},{t.tokens},{t.tokensGenerated}," +
-                          $"{Escape(t.platform)},{Escape(t.device)},{Escape(t.deviceType)}\n";
-
+            var line = $"{t.timestampUtc},{Escape(t.model)},{t.inferenceMs:F0},{t.tokens},{t.tokensGenerated},{Escape(t.platform)},{Escape(t.device)},{Escape(t.deviceType)}\n";
             File.AppendAllText(csvPath, line);
-            Debug.Log($"Telemetry logged: {t.model} ({t.inferenceMs:F0} ms)");
+            Debug.Log($"Telemetry logged to: {csvPath}");
         }
         catch (Exception e)
         {
@@ -46,9 +34,5 @@ public class TelemetryLogger : MonoBehaviour
         }
     }
 
-    private string Escape(string s)
-    {
-        if (string.IsNullOrEmpty(s)) return "";
-        return s.Replace(",", ";").Replace("\n", " ");
-    }
+    string Escape(string s) => string.IsNullOrEmpty(s) ? "" : s.Replace(",", ";").Replace("\n", " ");
 }

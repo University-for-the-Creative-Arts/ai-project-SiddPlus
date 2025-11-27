@@ -10,11 +10,13 @@ public class OllamaClient : MonoBehaviour
     [Tooltip("Ollama base URL (default http://localhost:11434)")]
     public string ollamaBaseUrl = "http://localhost:11434";
 
-    [Tooltip("Model name to call (e.g. llama3, mistral, phi3)")]
+    [Tooltip("Model name to call (e.g. llama3, gemma3:4b)")]
     public string model = "llama3";
 
+    // Timeout for UnityWebRequest in seconds
     public int requestTimeout = 60;
 
+    // Singleton convenience
     public static OllamaClient Instance { get; private set; }
 
     void Awake()
@@ -24,21 +26,21 @@ public class OllamaClient : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    /// <summary>
+    /// Send a prompt to Ollama's /api/generate endpoint and return raw JSON and telemetry.
+    /// callback receives (success, rawJson, Telemetry)
+    /// </summary>
     public IEnumerator Generate(string prompt, Action<bool, string, OllamaTelemetry> callback, bool stream = false)
     {
-        var url = $"{ollamaBaseUrl}/api/chat";
+        var url = $"{ollamaBaseUrl}/api/generate";
+        var payloadObj = new
+        {
+            model = model,
+            prompt = prompt,
+            stream = stream // we'll use non-streaming by default
+        };
 
-        // ? Correct payload for Ollama /api/chat
-        string jsonPayload = $@"
-{{
-  ""model"": ""{model}"",
-  ""messages"": [
-    {{""role"": ""system"", ""content"": ""You are a helpful NPC in a medieval town. Keep responses short, friendly, and immersive."" }},
-    {{""role"": ""user"", ""content"": ""{EscapeJson(prompt)}"" }}
-  ],
-  ""stream"": false
-}}";
-
+        string jsonPayload = JsonUtility.ToJson(payloadObj);
         byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonPayload);
 
         using (UnityWebRequest req = new UnityWebRequest(url, "POST"))
@@ -48,6 +50,7 @@ public class OllamaClient : MonoBehaviour
             req.SetRequestHeader("Content-Type", "application/json");
             req.timeout = requestTimeout;
 
+            // Start timer
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
@@ -64,8 +67,8 @@ public class OllamaClient : MonoBehaviour
 
             if (error)
             {
-                Debug.LogError($"Ollama request failed: {req.error}\nResponse: {req.downloadHandler.text}");
-                callback?.Invoke(false, req.downloadHandler.text, new OllamaTelemetry { success = false, inferenceMs = ms });
+                UnityEngine.Debug.LogError($"Ollama request failed: {req.error}");
+                callback?.Invoke(false, req.error, new OllamaTelemetry { success = false, inferenceMs = ms });
                 yield break;
             }
 
@@ -82,31 +85,19 @@ public class OllamaClient : MonoBehaviour
                 rawResponse = raw
             };
 
-            // ? Extract the assistant's message.content
-            string content = TryExtractMessageContent(raw);
-            telemetry.generatedText = content ?? "(no reply found)";
+            
+            try
+            {
+                if (!string.IsNullOrEmpty(raw) && raw.Length > 0)
+                {
+                    // attempt to extract short preview
+                    telemetry.generatedText = raw.Length > 1000 ? raw.Substring(0, 1000) + "..." : raw;
+                }
+            }
+            catch { /* ignore */ }
 
             callback?.Invoke(true, raw, telemetry);
         }
-    }
-
-    private string TryExtractMessageContent(string json)
-    {
-        // Very lightweight JSON extraction without needing Newtonsoft
-        string key = "\"content\":\"";
-        int start = json.IndexOf(key);
-        if (start == -1) return null;
-        start += key.Length;
-        int end = json.IndexOf('"', start);
-        if (end == -1) return null;
-        string extracted = json.Substring(start, end - start);
-        return extracted.Replace("\\n", "\n").Replace("\\\"", "\"");
-    }
-
-    private string EscapeJson(string s)
-    {
-        if (string.IsNullOrEmpty(s)) return "";
-        return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n");
     }
 }
 
@@ -116,12 +107,12 @@ public class OllamaTelemetry
     public bool success;
     public string model;
     public string timestampUtc;
-    public double inferenceMs;
-    public int tokens;
-    public int tokensGenerated;
+    public double inferenceMs; // milliseconds
+    public int tokens; // optional (try to fill if available)
+    public int tokensGenerated; // optional
     public string platform;
     public string device;
     public string deviceType;
-    public string rawResponse;
-    public string generatedText;
+    public string rawResponse; // raw JSON from API
+    public string generatedText; // best-effort preview
 }

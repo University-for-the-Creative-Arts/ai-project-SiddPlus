@@ -1,22 +1,21 @@
-using System;
 using System.Collections;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class NPCDialogueManager : MonoBehaviour
 {
     [Header("UI References (TextMeshPro)")]
-    public TMP_Text npcText;           // NPC's dialogue output
-    public TMP_InputField playerInput; // Player's text input
+    public TMP_Text npcText;          // NPC’s dialogue output
+    public TMP_InputField playerInput; // Player’s input field
     public Button sendButton;          // Send button
-    public TMP_Text telemetryText;     // Displays model name / response time
+    public TMP_Text telemetryText;     // Shows model name / response time
 
     [Header("Conversation Settings")]
     [TextArea(3, 6)]
     public string systemPrompt = "You are an NPC in a medieval town. Keep responses short, characterful, and friendly.";
 
-    private void Start()
+    void Start()
     {
         if (sendButton != null)
             sendButton.onClick.AddListener(OnSendClicked);
@@ -25,7 +24,7 @@ public class NPCDialogueManager : MonoBehaviour
             npcText.text = "Greetings, traveler!";
     }
 
-    private void OnSendClicked()
+    public void OnSendClicked()
     {
         string playerMessage = playerInput.text;
         if (string.IsNullOrWhiteSpace(playerMessage))
@@ -34,29 +33,34 @@ public class NPCDialogueManager : MonoBehaviour
         npcText.text = "Thinking...";
         string prompt = $"{systemPrompt}\nPlayer: {playerMessage}\nNPC:";
 
+        // Start the Ollama generation coroutine
         StartCoroutine(OllamaClient.Instance.Generate(prompt, OnOllamaResponse));
-        playerInput.text = "";
+
+        playerInput.text = ""; // Clear input field
     }
 
     private void OnOllamaResponse(bool ok, string rawJson, OllamaTelemetry telemetry)
     {
         if (!ok)
         {
-            npcText.text = "Sorry, I can't think right now.";
-            telemetryText.text = "Error: Could not reach Ollama server.";
+            npcText.text = "Sorry, I can’t think right now.";
+            telemetryText.text = "Error: Failed to reach Ollama server.";
             return;
         }
 
-        // Show AI reply
-        npcText.text = telemetry.generatedText?.Trim() ?? "(no response)";
+        // Display the generated response
+        if (!string.IsNullOrEmpty(telemetry.generatedText))
+            npcText.text = telemetry.generatedText.Trim();
+        else
+            npcText.text = rawJson.Length > 800 ? rawJson.Substring(0, 800) + "..." : rawJson;
 
-        // Display telemetry on-screen
+        // Display telemetry info on screen
         telemetryText.text =
             $"Model: {telemetry.model}\n" +
             $"Time: {telemetry.inferenceMs:F0} ms\n" +
             $"Device: {telemetry.device}";
 
-        // Save telemetry to file
+        // Log telemetry to disk
         TelemetryLogger.Instance.Log(telemetry);
     }
 }
