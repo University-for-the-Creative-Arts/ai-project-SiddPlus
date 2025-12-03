@@ -32,7 +32,7 @@ public class OllamaClient : MonoBehaviour
     /// </summary>
     public IEnumerator Generate(string prompt, Action<bool, string, OllamaTelemetry> callback, bool stream = false)
     {
-        var url = $"{ollamaBaseUrl}/api/generate";
+        var url = $"{ollamaBaseUrl}/api/chat";
         var payloadObj = new
         {
             model = model,
