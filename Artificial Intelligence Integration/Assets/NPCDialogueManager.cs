@@ -6,8 +6,8 @@ using TMPro;
 public class NPCDialogueManager : MonoBehaviour
 {
     [Header("UI References (TextMeshPro)")]
-    public TMP_Text npcText;          // NPC’s dialogue output
-    public TMP_InputField playerInput; // Player’s input field
+    public TMP_Text npcText;          // NPCï¿½s dialogue output
+    public TMP_InputField playerInput; // Playerï¿½s input field
     public Button sendButton;          // Send button
     public TMP_Text telemetryText;     // Shows model name / response time
 
@@ -31,6 +31,7 @@ public class NPCDialogueManager : MonoBehaviour
             return;
 
         npcText.text = "Thinking...";
+        //telemetryText.text = "URL: " + OllamaClient.Instance.ollamaBaseUrl + "/api/chat";
         string prompt = $"{systemPrompt}\nPlayer: {playerMessage}\nNPC:";
 
         // Start the Ollama generation coroutine
@@ -43,7 +44,7 @@ public class NPCDialogueManager : MonoBehaviour
     {
         if (!ok)
         {
-            npcText.text = "Sorry, I can’t think right now.";
+            npcText.text = "Sorry, I canï¿½t think right now.";
             telemetryText.text = "Error: Failed to reach Ollama server.";
             return;
         }

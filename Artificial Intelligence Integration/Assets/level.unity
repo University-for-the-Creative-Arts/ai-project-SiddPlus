@@ -1355,7 +1355,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e30e73a545abdcd4590f17783132c1e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ollamaBaseUrl: 'http://127.0.0.1:11500 '
+  ollamaBaseUrl: http://127.0.0.1:11500
   model: llama3
   requestTimeout: 60
 --- !u!4 &1238874853
