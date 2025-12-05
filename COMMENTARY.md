@@ -41,3 +41,13 @@ The integration of the LLM via Ollama delivers substantial enhancements to both 
 
 * **Enhanced Gameplay (Dynamic Immersion):** The AI transforms NPCs from characters with **static, pre-scripted dialogue trees** into dynamic, adaptive conversational partners. By reacting contextually to the player’s free-form input and adhering to a carefully designed `systemPrompt`, the NPC can generate unique, characterful responses in real-time, thereby increasing game immersion, unpredictability, and **replayability**. 
 * **Enhanced Creativity and Production Workflow:** Utilizing **Ollama** ensures the AI core remains **local-first**. This is a massive advantage for development, allowing for extremely **rapid iteration** on character personalities by simply tweaking the `systemPrompt` without facing cloud API costs or network lag. Developers can easily swap between different LLMs (e.g., from an ultra-fast, small model for testing to a more creative, large model for final deployment) directly on their machine, streamlining the creative process for dialogue and character writing. The captured telemetry data further aids the production workflow by providing concrete metrics on the performance impact (latency) of different models, informing optimal design choices.
+
+## Game
+
+![UI Screenshot](UI.png)
+
+![Log Screenshot](Log.png)
+
+![AI1 GIF](AI1.gif)
+
+![AI2 GIF](AI2.gif)
